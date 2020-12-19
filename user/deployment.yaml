@@ -1,0 +1,48 @@
+apiVersion: v1   #版本号
+kind: Service   #pod
+metadata: #原数据
+  name: userrpc
+  namespace: default
+  labels:
+    app: userrpc
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+  selector:
+    app: userrpc
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: userrpc
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: userrpc
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: userrpc
+        version: v1
+    spec:
+      imagePullSecrets:
+      - name: regsecret
+      containers:
+      - name: userrpc
+        image: registry.cn-hangzhou.aliyuncs.com/qnspace/user_rpc:serverless
+        imagePullPolicy: Always
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 5  #k8健康监测---end
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ETCD_HOSTS
+          value: 'etcd.discov.svc.cluster.local:2379'
